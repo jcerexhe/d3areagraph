@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>Area Graph Template</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+
+<button onclick="updateChart('math')">Math</button>
+<button onclick="updateChart('science')">Science</button>
+<button onclick="updateChart('reading')">Reading</button>
+
+<div id="chart"></div>
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.6.1/lodash.min.js"></script>
+
+<script type="text/javascript">
+  var w = 400;
+  var h = 300;
+  var path;
+  var subjects;
+
+  $.getJSON('./data.json', function (json) {
+    subjects = json;
+
+    _.keys(subjects).forEach(function (subject) {
+      subjects[subject].forEach(function (d) {
+        d.date = d3.time.format("%Y%m%d").parse(d.date);
+      });
+    });
+
+    path = d3
+      .select('#chart')
+      .append('svg')
+      .attr('width', w)
+      .attr('height', h)
+      .append('g')
+      .append('path');
+
+    updateChart('math');
+  });
+
+  function updateChart (subject) {
+    var data = subjects[subject];
+    var dates = _.map(data, 'date');
+    var counts = _.map(data, 'count');
+
+    var x = d3.time.scale()
+      .domain(d3.extent(dates))
+      .range([0, w]);
+
+    var y = d3.scale.linear()
+      .domain(d3.extent(counts))
+      .range([h, 0]);
+
+    var area = d3.svg.area()
+      .interpolate('bundle')
+      .x(function (d) {
+        return x(d.date);
+      })
+      .y0(function (d) {
+        return y(0);
+      })
+      .y1(function (d) {
+        return y(d.count);
+      });
+
+    path
+      .datum(data)
+      .transition()
+      .duration(450)
+      .attr('d', area);
+  }
+</script>
+
+</body>
+</html>
